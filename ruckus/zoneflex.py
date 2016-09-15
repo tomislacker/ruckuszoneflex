@@ -1,10 +1,14 @@
 import requests
+import logging
+
+log = logging.getLogger(__name__)
+
 
 class ZoneFlex(object):
     SESSION_COOKIE = 'sid'
 
     def __init__(self, addr, port=443, proto='https', verify_ssl=False,
-                username='super', passwd='sp-admin'):
+            username='super', passwd='sp-admin'):
         self.addr = addr
         self.port = port
         self.proto = proto
@@ -16,11 +20,13 @@ class ZoneFlex(object):
 
     def login(self):
         # Fetch the index page first to get a cookie
+        log.debug("Fetching index")
         resp_index = self.session.get(self._get_url('/'))
         assert resp_index.status_code == 200, \
             "Failed to fetch cookie"
 
         # Attempt to login
+        log.notice("Posting login")
         resp = self.session.post(
             self._get_url('/forms/doLogin'),
             data={
