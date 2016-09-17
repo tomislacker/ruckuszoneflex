@@ -18,7 +18,7 @@ notebook : dev
 	$(VENV_PATH)/bin/jupyter-notebook
 
 .PHONY : test
-test   : dev
+test   : #dev
 	@$(VENV_PATH)/bin/nose2 \
 		-vv \
 		--log-level $(LOG_LEVEL) \
