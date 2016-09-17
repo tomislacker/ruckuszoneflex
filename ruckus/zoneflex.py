@@ -8,59 +8,13 @@ log = logging.getLogger(__name__)
 
 class FirmwareVersion(object):
     def __init__(self):
-        self._uris = {}
-        self._uri_contents = {}
-
-    def forget_all(self):
-        """
-        Clear cache of parsed DOC trees
-        """
-        self._uri_contents = {}
-        self._uri_trees = {}
-
-    def _get_contents(self, uri_name):
-        """
-        Fetch contents via requests module
-        :param uri_name:
-        :return:
-        """
-        if uri_name not in self._uri_contents:
-            # Go fetch it
-            pass
-
-        return self._uri_contents[uri_name]
-
-    def _get_tree(self, uri_name):
-        """
-        Parse via lxml
-        :param uri_name:
-        :return: lxml tree
-        """
-        if uri_name not in self._uri_trees:
-            self._uri_trees[uri_name] = self._parse_tree(self._get_contents(uri_name))
-
-        return self._uri_trees[uri_name]
-
-    def _get_xpath(self, uri_name, xpath):
-        """
-        From a try, find some xpath
-        :param uri_name:
-        :param xpath:
-        :return:
-        """
-        return self._get_tree(uri_name).xpath(xpath)
-
-    def post(self, uri_name, data):
-        """
-        POST via requests
-        :param uri_name:
-        :param data:
-        :return:
-        """
+        self._params = {}
 
 
 class Firmware_9_6_2_0_13(FirmwareVersion):
     def __init__(self):
+        super(Firmware_9_6_2_0_13, self).__init__()
+
         # call parent
         self._uris = {
             'devicename': ['/configuration/device.asp', '/forms/configdevice']
@@ -68,21 +22,50 @@ class Firmware_9_6_2_0_13(FirmwareVersion):
 
     @property
     def devicename(self):
-        fetch_resp = self.zf.session.get(
-            self.zf.get_url('/configuration/device.asp')
-        )
-        print("Fetch Status: {}".format(fetch_resp.status_code))
-        print("Fetched {} bytes".format(len(fetch_resp.content)))
-        return re.search(r'\$\(\'devicename\'\)\.value=\'(.*)\';', fetch_resp.content).group(1)
+        if 'devicename' not in self._params:
+            self._params['devicename'] = re.search(
+                r'\$\(\'devicename\'\)\.value=\'(.*)\';',
+                self.zf.session.get(self.zf.get_url('/configuration/device.asp')).content
+            ).group(1)
+        return self._params['devicename']
 
     @devicename.setter
     def devicename(self, new_name):
-        return self.zf.session.post(
+        resp = self.zf.session.post(
             self.zf.get_url('/forms/configdevice'),
             data={
                 'devicename': new_name
             }
         )
+        del self._params['devicename']
+        assert resp.status_code in [200, 302], \
+            "Request failed"
+        self._params['devicename'] = new_name
+
+
+    @property
+    def devicelocation(self):
+        if 'devicelocation' not in self._params:
+            self._params['devicelocation'] = re.search(
+                r'\$\(\'devicelocation\'\)\.value=\'(.*)\';',
+                self.zf.session.get(self.zf.get_url('/configuration/device.asp')).content
+            ).group(1)
+
+        return self._params['devicelocation']
+
+    @devicelocation.setter
+    def devicelocation(self, new_loc):
+        resp = self.zf.session.post(
+            self.zf.get_url('/forms/configdevice'),
+            data={
+                'devicename': self.devicename,
+                'devicelocation': new_loc
+            }
+        )
+        del self._params['devicelocation']
+        assert resp.status_code in [200, 302], \
+            "Request failed"
+        self._params['devicelocation'] = new_loc
 
 
 class ZoneFlex(object):
