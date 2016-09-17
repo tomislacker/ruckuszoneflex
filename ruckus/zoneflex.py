@@ -42,7 +42,6 @@ class Firmware_9_6_2_0_13(FirmwareVersion):
             "Request failed"
         self._params['devicename'] = new_name
 
-
     @property
     def devicelocation(self):
         if 'devicelocation' not in self._params:
@@ -57,6 +56,7 @@ class Firmware_9_6_2_0_13(FirmwareVersion):
     def devicelocation(self, new_loc):
         resp = self.zf.session.post(
             self.zf.get_url('/forms/configdevice'),
+            # If updated w/o the devicename, devicename becomes blank
             data={
                 'devicename': self.devicename,
                 'devicelocation': new_loc
