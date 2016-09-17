@@ -105,6 +105,103 @@ class Firmware_9_6_2_0_13(FirmwareVersion):
             "Request failed"
         self._params['radio24_channel'] = new_channel
 
+    def _get_wlan_tab(self, wlan_num):
+        wlan_idx = 'wlan' + str(wlan_num)
+        if wlan_idx not in self._params:
+            page = self.zf.session.get(
+                self.zf.get_url('/cWireless.asp?wifi=0&subp=tab' + str(wlan_num)),
+            ).content
+            wlan = {}
+
+            wlan['tabname'] = re.search(
+                r'\$\(\'wlan-tabname\'\)\.value=\'(.*)\';',
+                page
+            ).group(1)
+
+            # Broadcast SSID?
+            if re.search(
+                    r'load_router_values\(\'broadcast\', \'broadcast-y\'\);',
+                    page
+            ):
+                wlan['broadcast'] = True
+            elif re.search(
+                    r'load_router_values\(\'broadcast\', \'broadcast-n\'\);',
+                    page
+            ):
+                wlan['broadcast'] = False
+
+            # Wireless Availability
+            if re.search(
+                    r'\$\(\'wireless-y\'\)\.checked=true;', page
+            ):
+                wlan['enabled'] = True
+            elif re.search(
+                    r'\$\(\'wireless-n\'\)\.checked=true;', page
+            ):
+                wlan['enabled'] = False
+
+            # SSID
+            wlan['ssid'] = re.search(
+                r'\$\(\'ssid\'\)\.value=\'(.*)\';',
+                page
+            ).group(1)
+            self._params['wlan1'] = wlan
+
+            # VLAN
+            wlan['vid'] = int(re.search(
+                r'\$\(\'wlan-vlan-id\'\)\.value\s*=\s*\'(.*)\';',
+                page
+            ).group(1))
+
+            # Client Fingerprinting
+            if re.search(
+                    r'\$\(\'sta_info_extraction_y\'\)\.checked\s*=\s*true;',
+                    page
+            ):
+                wlan['fingerprinting'] = True
+            elif re.search(
+                    r'\$\(\'sta_info_extraction_n\'\)\.checked\s*=\s*true;',
+                    page
+            ):
+                wlan['fingerprinting'] = False
+
+            self._params[wlan_idx] = wlan
+
+        return self._params[wlan_idx]
+
+    @property
+    def wlan1(self):
+        return self._get_wlan_tab(1)
+
+    @property
+    def wlan2(self):
+        return self._get_wlan_tab(2)
+
+    @property
+    def wlan3(self):
+        return self._get_wlan_tab(3)
+
+    @property
+    def wlan4(self):
+        return self._get_wlan_tab(4)
+
+    @property
+    def wlan5(self):
+        return self._get_wlan_tab(5)
+
+    @property
+    def wlan6(self):
+        return self._get_wlan_tab(6)
+
+    @property
+    def wlan7(self):
+        return self._get_wlan_tab(7)
+
+    @property
+    def wlan8(self):
+        return self._get_wlan_tab(8)
+
+
 class ZoneFlex(object):
     SESSION_COOKIE = 'sid'
 
