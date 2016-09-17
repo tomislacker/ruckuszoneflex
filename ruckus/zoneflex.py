@@ -1,6 +1,7 @@
 import requests
 import logging
 import re
+import json
 
 log = logging.getLogger(__name__)
 
@@ -172,6 +173,56 @@ class Firmware_9_6_2_0_13(FirmwareVersion):
     @property
     def wlan1(self):
         return self._get_wlan_tab(1)
+
+    @wlan1.setter
+    def wlan1(self, wlan):
+        del self._params['wlan1']
+        data = {
+            'action': '[object MouseEvent]',
+            'auth-ip': '',
+            'acct-ip': '',
+            'access-vlan-id': wlan.get('vid', self.wlan1['vid']),
+            'wlan-vlan-id': wlan.get('vid', self.wlan1['vid']),
+            'wlan-tabname': wlan.get('ssid', self.wlan1['tabname']),
+            'ssid': wlan.get('ssid', self.wlan1['ssid']),
+            'wireless': int(wlan.get('enabled', self.wlan1['enabled'])),
+            'broadcast': int(wlan.get('broadcast', self.wlan1['broadcast'])),
+            'forward': 0,
+            'hotspot-profile': -1,
+            'local-subnet': -1,
+            'dhcp_option82_enable': 0,
+            'sta_info_extraction_enable': int(wlan.get('fingerprinting', self.wlan1['fingerprinting'])),
+            'securitymode': 'wpa',
+            'wep-auth': 'open',
+            'wepkeylen': 5,
+            'keymethod': 'hex',
+            'webkey': '',
+            'defkeyidx': 4,
+            'wpa-version': 'wpa',
+            'wpa-auth': 'psk',
+            'wpa-alg': 'auto',
+            #'wpapassphrase': wlan.get('wpakey', self.wlan1['wpakey']),
+            'wpapassphrase': wlan.get('wpakey', 'brokeashell'),
+            'wpa_nas_id': '',
+            'auth_ip': '',
+            'auth-port': '',
+            'auth-secret': '',
+            'acct_ip': '',
+            'acct-port': '',
+            'acct-secret': '',
+        }
+        del self._params['wlan1']
+        print(json.dumps(data, indent=4, separators=(',', ':')))
+        resp = self.zf.session.post(
+            self.zf.get_url('/forms/configWireless?wifi=0&subp=tab1'),
+            data=data,
+            headers={
+                'Referer': 'https://192.168.10.125/configuration/wireless.asp',
+            }
+        )
+        assert resp.status_code in [302, 200], \
+            "Request failed"
+        print(resp.content)
 
     @property
     def wlan2(self):
