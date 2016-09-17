@@ -15,3 +15,4 @@ with such.A('ZoneFlex Host/IP') as it:
         it.zf.login()
         assert it.zf.logged_in
 
+it.createTests(globals())
