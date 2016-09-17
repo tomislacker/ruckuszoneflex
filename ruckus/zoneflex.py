@@ -66,6 +66,14 @@ class Firmware_9_6_2_0_13(FirmwareVersion):
             "Request failed"
         self._params['devicelocation'] = new_loc
 
+    @property
+    def radio24_channel(self):
+        if 'radio24_channel' not in self._params:
+            self._params['radio24_channel'] = int(re.search(
+                r'\$\(\'channel\'\)\.selectedIndex=option_values\(\'channel\'\).indexOf\(\'([0-9]+)\'\);',
+                self.zf.session.get(self.zf.get_url('/cWireless.asp?wifi=0&subp=common')).content
+            ).group(1))
+        return self._params['radio24_channel']
 
 class ZoneFlex(object):
     SESSION_COOKIE = 'sid'
