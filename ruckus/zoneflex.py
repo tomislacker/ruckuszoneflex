@@ -6,9 +6,15 @@ log = logging.getLogger(__name__)
 
 
 class FirmwareVersion(object):
+    CHANNEL_LOW = 0
+    CHANNEL_AUTO = CHANNEL_LOW
+    CHANNEL_HIGH = 11
+
     def __init__(self):
         self._params = {}
 
+    def forget_params(self):
+        self._params = {}
 
 class Firmware_9_6_2_0_13(FirmwareVersion):
     def __init__(self):
@@ -66,6 +72,38 @@ class Firmware_9_6_2_0_13(FirmwareVersion):
             "Request failed"
         self._params['devicelocation'] = new_loc
 
+    @property
+    def radio24_channel(self):
+        if 'radio24_channel' not in self._params:
+            self._params['radio24_channel'] = int(re.search(
+                r'\$\(\'channel\'\)\.selectedIndex=option_values\(\'channel\'\).indexOf\(\'([0-9]+)\'\);',
+                self.zf.session.get(self.zf.get_url('/cWireless.asp?wifi=0&subp=common')).content
+            ).group(1))
+        return self._params['radio24_channel']
+
+    @radio24_channel.setter
+    def radio24_channel(self, new_channel):
+        assert self.CHANNEL_LOW <= new_channel <= self.CHANNEL_HIGH, \
+            "Invalid channel ({low} <= N {high})".format(
+                low=self.CHANNEL_LOW,
+                high=self.CHANNEL_HIGH
+            )
+
+        resp = self.zf.session.post(
+            self.zf.get_url('/forms/configWireless'),
+            data={
+                'action': '[ object MouseEvent ]',
+                'wifi-tabname': 'Radio 2.4G',
+                'freqband': '11ng',
+                'channel': new_channel,
+                'channelwidth': 0,
+                'aerosct': 0,
+            }
+        )
+        del self._params['radio24_channel']
+        assert resp.status_code in [302, 200], \
+            "Request failed"
+        self._params['radio24_channel'] = new_channel
 
 class ZoneFlex(object):
     SESSION_COOKIE = 'sid'
