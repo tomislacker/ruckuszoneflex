@@ -1,7 +1,6 @@
 import requests
 import logging
 import re
-from lxml import html
 
 log = logging.getLogger(__name__)
 
